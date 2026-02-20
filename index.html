@@ -150,6 +150,7 @@
       box-shadow:0 1px 3px rgba(0,0,0,0.2);
     }
 
+    /* Compact sliders (match fields better) */
     .section input[type="range"]{
       height:6px;
     }
@@ -266,6 +267,7 @@
       filter: grayscale(0.15);
     }
   
+    /* 🐾 Subtle random paws ONLY on editor panel */
     #paw-overlay{
       position:absolute;
       inset:0;
@@ -293,6 +295,7 @@
       100%{ opacity:0; transform:scale(1.05); }
     }
 
+    /* Lottie icons in header title */
     .centerTitle{
       display:flex;
       align-items:center;
@@ -551,7 +554,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     </div>
 
     <div class="section">
-      <h3>🧰 Game Mode</h3>
+      <h3>🧲 Game Mode</h3>
       <label>Mode</label>
       <select id="gameMode">
         <option value="return" selected>Magnet (return)</option>
@@ -938,6 +941,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
 
+  /* ===== START SCREEN (Magic Wand + READY) ===== */
   #startScreen{
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -961,6 +965,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     width:min(520px, 92vw);
   }
 
+  /* Wand floats above, then taps the button */
   #wandWrap{
     z-index:9001;
     position:absolute;
@@ -976,6 +981,8 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
   #wandAnim{ width:100%; height:100%; }
 
+  
+
 #startBtn{
   background:none;
   border:none;
@@ -984,10 +991,12 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   position:relative;
   z-index:9000;
 }
+
   
   #startBtn:active{ transform:scale(1.03); }
   #startBtn[disabled]{ opacity:0.75; cursor:default; }
 
+  /* Sparkles burst */
   .sparkle{
     position:fixed;
     left:0; top:0;
@@ -1011,6 +1020,8 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     display:block;
     pointer-events:none;
   }
+
+  /* ===== /START SCREEN ===== */
 
   #end{
     position:fixed; top:0; left:0;
@@ -1087,24 +1098,6 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   </div>
 
 <script>
-  // 🔹 Sound assets
-  const sounds = {
-    ready: new Audio('ready.mp3'),
-    pick: new Audio('pick.mp3'),
-    drop: new Audio('drop.mp3'),
-    wrong: new Audio('wrong.mp3'),
-    win: new Audio('win.mp3'),
-    lose: new Audio('lose.mp3'),
-    timeup: new Audio('timeup.mp3')
-  };
-
-  const playSnd = (s) => {
-    if(sounds[s]) {
-      sounds[s].currentTime = 0;
-      sounds[s].play().catch(() => {});
-    }
-  };
-
   const mode = "${mode}";
   const dir = "${dir}";
   const speedSeconds = ${speedSeconds};
@@ -1119,12 +1112,13 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   const WRONG_SCORE_PENALTY = ${WRONG_SCORE_PENALTY};
   const STREAK_ENABLED = ${STREAK_ENABLED};
   const STREAK_CAP_BONUS = ${STREAK_CAP};
-  
+  // 🔹 Load canvas-confetti safely inside iframe
   let confettiReady = false;
   (function loadConfetti(){
     const s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
     s.onload = () => { confettiReady = true; };
+    s.onerror = () => { confettiReady = false; };
     document.head.appendChild(s);
   })();
 
@@ -1157,10 +1151,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
   function stopTimer(){ if(timerTick) clearInterval(timerTick); timerTick = null; }
-  function endByTime(){ 
-    playSnd('timeup');
-    showEnd("TIME UP!"); 
-  }
+  function endByTime(){ showEnd("TIME UP!"); }
 
   function applyTimePenalty(sec){
     if(!TIMER_ENABLED) return;
@@ -1234,11 +1225,6 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   function showEnd(msg) {
     if(isGameOver) return;
     isGameOver = true; running = false; stopTimer();
-
-    // Final sound logic
-    if(msg === "WELL DONE!") playSnd('win');
-    else playSnd('lose');
-
     const endScreen = document.getElementById('end');
     endScreen.style.display = 'flex';
     document.getElementById('m').innerText = msg;
@@ -1250,15 +1236,21 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     if (!on) document.querySelectorAll('.bin').forEach(b => b.classList.remove('drop-active'));
   }
 
+  
   function confettiBurst(fromEl){
     if(!confettiReady || typeof confetti !== "function") return;
     const r = fromEl.getBoundingClientRect();
     const x = (r.left + r.width/2) / window.innerWidth;
     const y = (r.top + r.height*0.35) / window.innerHeight;
-    confetti({ particleCount: 70, spread: 80, startVelocity: 38, origin: { x, y } });
-  }
 
-  function sadEmojiBurst(fromEl){
+    confetti({
+      particleCount: 70,
+      spread: 80,
+      startVelocity: 38,
+      origin: { x, y }
+    });
+  }
+function sadEmojiBurst(fromEl){
     const r = fromEl.getBoundingClientRect(), x = r.left + r.width/2, y = r.top + 40;
     for(let i=0;i<8;i++){
       const e = document.createElement('div');
@@ -1273,7 +1265,6 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
   function returnItem(el) {
-    playSnd('drop');
     const home = el.__home;
     if (!home || !home.isConnected) { el.remove(); checkFinish(); return; }
     el.classList.remove('dragging'); el.classList.add('returning');
@@ -1294,7 +1285,6 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     listeners: {
       start(e) {
         if(isGameOver || !gameStarted) return;
-        playSnd('pick');
         const el = e.target; el.__home = el.parentNode;
         const r = el.getBoundingClientRect();
         Object.assign(el.style, { width: r.width+'px', height: r.height+'px', left: r.left+'px', top: r.top+'px' });
@@ -1323,14 +1313,12 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       const item = e.relatedTarget, bin = e.target;
       bin.classList.remove('drop-active'); setBinsDragReady(false);
       if(item.dataset.c === bin.dataset.t) {
-        playSnd('win');
         streak = STREAK_ENABLED ? (streak + 1) : 0;
         let bonus = (STREAK_ENABLED && streak >= 2) ? (streak === 2 ? 2 : (streak === 3 ? 4 : STREAK_CAP_BONUS)) : 0;
         const base = (RANDOM_SCORE_ENABLED ? (Math.floor(Math.random()*(SCORE_RANDOM_MAX-SCORE_RANDOM_MIN+1)) + SCORE_RANDOM_MIN) : CORRECT_SCORE);
         setScore(score + base + bonus);
         confettiBurst(bin); item.remove(); checkFinish();
       } else {
-        playSnd('wrong');
         streak = 0; if(WRONG_SCORE_PENALTY > 0) setScore(score - WRONG_SCORE_PENALTY);
         if(WRONG_TIME_PENALTY > 0) applyTimePenalty(WRONG_TIME_PENALTY);
         lives--; updateLives(); sadEmojiBurst(bin); bin.classList.add('shake');
@@ -1341,12 +1329,14 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   });
 
 
+  // ===== START SCREEN LOGIC =====
   (function initStartScreen(){
     const ss = document.getElementById('startScreen');
     const btn = document.getElementById('startBtn');
     const wandWrap = document.getElementById('wandWrap');
     const wand = document.getElementById('wandAnim');
 
+    // lottie wand
     if (typeof lottie !== "undefined" && wand){
       lottie.loadAnimation({
         container: wand,
@@ -1375,26 +1365,41 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
 
     function startGame(){
       if (gameStarted || isGameOver) return;
-      gameStarted = true; running = true;
+      gameStarted = true;
+      running = true;
       startTimer();
       requestAnimationFrame(beltTick);
     }
 
     function wandTapThenStart(){
       if (gameStarted || isGameOver) return;
-      playSnd('ready');
-      if (!btn || !wandWrap) { if (ss) ss.style.display='none'; startGame(); return; }
+      if (!btn || !wandWrap) { 
+        if (ss) ss.style.display='none';
+        startGame();
+        return;
+      }
 
+      
+
+      // Compute where the wand should "touch" the button (near upper-left)
       const br = btn.getBoundingClientRect();
       const wr = wandWrap.getBoundingClientRect();
+
       const targetX = br.left + br.width*0.50;
       const targetY = br.top + br.height*0.58;
+
       const dx = targetX - (wr.left + wr.width*0.92);
       const dy = targetY - (wr.top + wr.height*0.58);
 
+      // Move wand to the button
       wandWrap.style.transform = 'translate(calc(-50% + ' + dx + 'px), ' + dy + 'px) rotate(-14deg)';
 
-      setTimeout(() => sparkleBurst(targetX, targetY), 520);
+      // Sparkles at the "touch" point
+      setTimeout(() => {
+        sparkleBurst(targetX, targetY);
+      }, 520);
+
+      // Fade out screen, then start
       setTimeout(() => {
         if (ss) ss.classList.add('fadeOut');
         setTimeout(() => {
@@ -1404,11 +1409,20 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       }, 680);
     }
 
-    if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); wandTapThenStart(); });
+    if (btn){
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        wandTapThenStart();
+      });
+    }
+
+    // Keyboard start
     window.addEventListener('keydown', (e) => {
-      if (!gameStarted && (e.key === 'Enter' || e.key === ' ')) wandTapThenStart();
+      if (gameStarted) return;
+      if (e.key === 'Enter' || e.key === ' ') wandTapThenStart();
     });
   })();
+  // ===== /START SCREEN LOGIC =====
 
   setScore(0);
 <\/script>
@@ -1450,6 +1464,11 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       if (!el || !el.id) return;
       if (el.id === 'boxCount') toggleBoxes();
       if (el.id === 'timerEnabled') syncTimerControls();
+
+
+
+
+
       if (el.id === 'randomScoreEnabled') syncScoreControls();
       if (el.id === 'scoreMin' || el.id === 'scoreMax') {
         const rndEl = document.getElementById('randomScoreEnabled');
@@ -1458,8 +1477,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       scheduleBuild();
     };
   }
-
-  window.onload = () => {
+window.onload = () => {
     toggleBoxes();
     syncTimerControls();
     syncScoreControls();
@@ -1467,67 +1485,124 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     hookLivePreview();
   };
 
+  // 🔹 UX fix: clicking an open <select> closes it (no need to click outside)
   (function initSelectToggle(){
     document.querySelectorAll('select').forEach(sel => {
       sel.addEventListener('mousedown', function(){
-        if (this.dataset._open === '1') { this.blur(); this.dataset._open = '0'; }
-        else { this.dataset._open = '1'; }
+        // mousedown fires before native open; use a flag to detect "second click"
+        if (this.dataset._open === '1') {
+          this.blur();
+          this.dataset._open = '0';
+        } else {
+          this.dataset._open = '1';
+        }
       });
-      sel.addEventListener('change', function(){ this.dataset._open = '0'; this.blur(); });
-      sel.addEventListener('blur', function(){ this.dataset._open = '0'; });
+      sel.addEventListener('change', function(){
+        // after choosing an option, allow the next click to open normally
+        this.dataset._open = '0';
+        this.blur();
+      });
+      sel.addEventListener('blur', function(){
+        this.dataset._open = '0';
+      });
     });
   })();
 
 
+    // 🐾 + ✨ Lottie decorations (editor only)
   (function initLottieDecor(){
     if (typeof lottie === "undefined") return;
 
+    // Title icons
     const rocketEl = document.getElementById('titleRocket');
     const sparkleEl = document.getElementById('titleSparkle');
     if (rocketEl) {
       lottie.loadAnimation({
-        container: rocketEl, renderer: "svg", loop: true, autoplay: true,
+        container: rocketEl,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6f8/lottie.json"
       });
     }
     if (sparkleEl) {
       lottie.loadAnimation({
-        container: sparkleEl, renderer: "svg", loop: true, autoplay: true,
+        container: sparkleEl,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/2728/lottie.json"
       });
     }
 
+    // Subtle paws on the editor panel perimeter
     const overlay = document.getElementById('paw-overlay');
     if (!overlay) return;
 
     function spawnPaw(){
       if (document.hidden) return;
+
       const paw = document.createElement("div");
       paw.className = "paw";
+
       const pad = 18;
-      const w = overlay.clientWidth, h = overlay.clientHeight;
+      const w = overlay.clientWidth;
+      const h = overlay.clientHeight;
       if (w < 100 || h < 100) return;
 
       const side = Math.floor(Math.random() * 4);
-      let x = 0, y = 0, rotation = 0;
+      let x = 0, y = 0;
+      let rotation = 0;
       const flip = Math.random() < 0.5 ? -1 : 1;
 
-      if(side === 0){ x = Math.random() * w; y = pad; rotation = 180; }
-      else if(side === 1){ x = w - pad; y = Math.random() * h; rotation = -90; }
-      else if(side === 2){ x = Math.random() * w; y = h - pad; rotation = 0; }
-      else { x = pad; y = Math.random() * h; rotation = 90; }
+      if(side === 0){ // top
+        x = Math.random() * w;
+        y = pad;
+        rotation = 180;
+      } else if(side === 1){ // right
+        x = w - pad;
+        y = Math.random() * h;
+        rotation = -90;
+      } else if(side === 2){ // bottom
+        x = Math.random() * w;
+        y = h - pad;
+        rotation = 0;
+      } else { // left
+        x = pad;
+        y = Math.random() * h;
+        rotation = 90;
+      }
 
-      paw.style.left = x + "px"; paw.style.top = y + "px";
+      paw.style.left = x + "px";
+      paw.style.top = y + "px";
+
+      // rotation + mirror (looks like cat walks different directions)
       paw.style.transform = `scale(${flip}, 1) rotate(${rotation}deg)`;
+
       overlay.appendChild(paw);
 
       lottie.loadAnimation({
-        container: paw, renderer: "svg", loop: false, autoplay: true,
+        container: paw,
+        renderer: "svg",
+        loop: false,
+        autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f43e/lottie.json"
       });
+
       setTimeout(() => paw.remove(), 3600);
     }
-    setInterval(spawnPaw, 1800);
+
+    // gentle rate
+    const pawTimer = setInterval(spawnPaw, 1800);
+
+    // stop if panel removed
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(overlay)) {
+        clearInterval(pawTimer);
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
   })();
 
 </script>
