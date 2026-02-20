@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Sorting Game Builder (Live Preview)</title>
+
+  <style>
+    :root { --main:#6c5ce7; --bg:#f0f3f7; }
+    body{
+      font-family: "Segoe UI", system-ui;
+      margin:0;
+      display:flex;
+      height:100vh;
+      background:var(--bg);
+      overflow:hidden;
+    }
+    #panel{
+      width:460px;
+      background:#fff;
+      padding:20px;
+      border-right:1px solid #d1d8e0;
+      overflow:auto;
+      box-shadow: 5px 0 15px rgba(0,0,0,0.05);
+      position:relative;
+    }
+
+    /* Header brand */
+    .topbar{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      align-items:start;
+      gap:10px;
+      margin-bottom:8px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-width:0;
+    }
+    .brand a{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+      text-decoration:none;
+      color:#2d3436;
+    }
+    .brand img{
+      width:100px;
+      height:100px;
+      object-fit:contain;
+      background:rgba(0,0,0,0.00);
+      flex:0 0 auto;
+    }
+    .brand .handle{
+      font-weight:900;
+      font-size:18px;
+      line-height:1.05;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:220px;
+      opacity:0.92;
+    }
+    .centerTitle{
+      justify-self:center;
+      align-self:center;
+      font-weight:900;
+      font-size:26px;
+      letter-spacing:0.2px;
+      color:#2d3436;
+      text-align:center;
+      white-space:nowrap;
+    }
+
+
+    #updatedBadge{
+      display:flex;
+      justify-content:flex-end;
+      z-index:20;
+      pointer-events:none;
+    }
+    .badge{
+      padding:6px 10px;
+      border-radius:999px;
+      background:rgba(32,191,107,0.12);
+      color:#20bf6b;
+      font-weight:900;
+      font-size:11px;
+      opacity:0;
+      transform: translateY(-6px);
+      transition: opacity 140ms ease, transform 140ms ease;
+      border:1px solid rgba(32,191,107,0.28);
+      backdrop-filter: blur(2px);
+      margin-top:2px;
+    }
+    .badge.show{ opacity:1; transform: translateY(0); }
+
+    h2{ margin:0; font-size:18px; }
+    .hint{
+      font-size:11px;
+      color:#8395a7;
+      margin: 0 0 10px 2px;
+      font-weight:700;
+    }
+    .section{
+      background:#fff;
+      border:1px solid #e2e8f0;
+      border-radius:12px;
+      padding:14px;
+      margin-bottom:14px;
+    }
+    h3{
+      margin:0 0 10px 0;
+      font-size:12px;
+      color:var(--main);
+      text-transform:uppercase;
+      letter-spacing:1px;
+      border-bottom:1px solid #eee;
+      padding-bottom:6px;
+    }
+    label{
+      display:block;
+      font-size:10px;
+      font-weight:800;
+      color:#4b6584;
+      margin:10px 0 4px 0;
+    }
+    input, textarea, select{
+      width:100%;
+      padding:8px;
+      border:1.5px solid #d1d8e0;
+      border-radius:8px;
+      box-sizing:border-box;
+      font-size:12px;
+      outline:none;
+    }
+    textarea{ resize:vertical; }
+
+    input[type=range]{ -webkit-appearance:none; width:100%; background:transparent; margin:0; padding:0; cursor:pointer; }
+    input[type=range]::-webkit-slider-runnable-track{ width:100%; height:8px; background:#dfe6e9; border-radius:4px; }
+    input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      height:18px; width:18px; border-radius:50%;
+      background:var(--main);
+      margin-top:-5px;
+      border:2px solid #fff;
+      box-shadow:0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    /* Compact sliders (match fields better) */
+    .section input[type="range"]{
+      height:6px;
+    }
+    .section input[type="range"]::-webkit-slider-runnable-track{
+      height:6px;
+    }
+    .section input[type="range"]::-webkit-slider-thumb{
+      width:16px;
+      height:16px;
+      margin-top:-5px;
+    }
+
+    .rangeRow{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .rangeRow input[type="range"]{
+      flex:1;
+      width:100%;
+    }
+    .rangeVal{
+      width:72px;
+      padding:8px;
+      border:1.5px solid #d1d8e0;
+      border-radius:8px;
+      box-sizing:border-box;
+      font-size:12px;
+      font-weight:900;
+      color:#2d3436;
+      background:#f7f9fb;
+    }
+    .rangeVal[readonly]{ cursor:default; }
+.flex{ display:flex; gap:10px; align-items:flex-end; }
+    .col{ flex:1; }
+
+    .row{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .row input[type="checkbox"]{
+      width:auto;
+      transform: translateY(1px);
+      accent-color: var(--main);
+    }
+    .row small{ color:#8395a7; font-weight:700; }
+
+    .btn-group{
+      position:sticky;
+      bottom:-20px;
+      background:#fff;
+      padding:10px 0 0 0;
+      border-top:1px solid #eee;
+      z-index:10;
+    }
+    .btn{
+      padding:12px;
+      border:none;
+      border-radius:10px;
+      font-weight:900;
+      cursor:pointer;
+      width:100%;
+      margin-bottom:10px;
+      transition: transform 120ms ease, filter 120ms ease, background-color 140ms ease;
+      color:#fff;
+    }
+    .btn:active{ transform: scale(0.99); }
+    #copy-btn{ background:#4b6584; }
+    #copy-btn.success{ background:none; }
+    #copy-btn.error{ background:#ff6b6b; }
+
+    #view{
+      flex:1;
+      padding:20px;
+      display:flex;
+      flex-direction:column;
+      background:#2d3436;
+      position:relative;
+    }
+    #game-preview{
+      width:100%;
+      height:100%;
+      border-radius:14px;
+      border:none;
+      background:#000;
+    }
+
+    /* Toast */
+    #toast{
+      position:fixed;
+      left:35%;
+      bottom:18px;
+      transform:translateX(-50%) translateY(12px);
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:900;
+      font-size:12px;
+      opacity:0;
+      pointer-events:none;
+      transition: opacity 160ms ease, transform 160ms ease;
+      background: rgba(0,0,0,0.78);
+      color:#fff;
+      backdrop-filter: blur(6px);
+      border:1px solid rgba(255,255,255,0.12);
+      z-index:9999;
+      white-space:nowrap;
+    }
+    #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+    .disabled{
+      opacity:0.55;
+      pointer-events:none;
+      filter: grayscale(0.15);
+    }
+  
+    /* 🐾 Subtle random paws ONLY on editor panel */
+    #paw-overlay{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      overflow:hidden;
+      z-index:0;
+    }
+    #panel > :not(#paw-overlay){
+      position:relative;
+      z-index:2;
+    }
+    .paw{
+      position:absolute;
+      width:38px;
+      height:38px;
+      opacity:0;
+      transform:scale(0.6);
+      animation:pawFade 3.5s ease-out forwards;
+      filter: grayscale(0.05);
+    }
+    @keyframes pawFade{
+      0%{ opacity:0; transform:scale(0.6); }
+      15%{ opacity:0.14; }
+      85%{ opacity:0.14; }
+      100%{ opacity:0; transform:scale(1.05); }
+    }
+
+    /* Lottie icons in header title */
+    .centerTitle{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+    }
+    .titleLottie{
+      width:28px;
+      height:28px;
+      flex:0 0 28px;
+      pointer-events:none;
+    }
+    .titleText{
+      display:inline-block;
+    }
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+</head>
+
+<body>
+  <div id="panel">
+    <div id="paw-overlay" aria-hidden="true"></div>
+    <div class="topbar">
+      <div class="brand">
+        <a href="https://instagram.com/kat.thetutor" target="_blank" rel="noopener">
+          <img src="https://i.postimg.cc/Y2GQ01p9/3.png" alt="kat.thetutor logo">
+          <div class="handle">@kat.thetutor</div>
+        </a>
+      </div>
+
+      <div class="centerTitle"><div class="titleLottie" id="titleRocket" aria-hidden="true"></div><span class="titleText">Editor Live</span><div class="titleLottie" id="titleSparkle" aria-hidden="true"></div></div>
+
+      <div id="updatedBadge"><div class="badge" id="badgeEl">Updated ✓</div></div>
+    </div>
+
+    <div class="section">
+      <h3>🎨 Appearance</h3>
+
+      <label>Font Name</label>
+      <input type="text" id="gFont" value="Special Elite" />
+
+      <div class="flex">
+        <div class="col">
+          <label>Font Size (px)</label>
+          <input type="number" id="fSize" value="18" />
+        </div>
+        <div class="col">
+          <label>Text Colour</label>
+          <input type="color" id="fColor" value="#000000" />
+        </div>
+      </div>
+
+      <label>Text Opacity</label>
+      <input type="range" id="fOpacity" min="0" max="1" step="0.01" value="1"/>
+
+      <label>Game Background (URL)</label>
+      <input type="text" id="bg" value="https://img.freepik.com/free-vector/underwater-background-with-ocean-bottom-sun-rays_107791-5843.jpg" />
+
+      <div class="flex">
+        <div class="col">
+          <label>Belt Speed (1 slow, 10 fast)</label>
+          <input type="range" id="speed" min="1" max="10" step="1" value="4"/>
+        </div>
+        <div class="col">
+          <label>Belt Direction</label>
+          <select id="moveDir">
+            <option value="right" selected>Right</option>
+            <option value="left">Left</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>🃏 Cards</h3>
+
+      <label>Card Background (URL)</label>
+      <input type="text" id="itemMask" placeholder="URL на PNG (маска/фон карточки)" />
+
+      <div class="flex">
+        <div class="col">
+          <label>Plate Colour</label>
+          <input type="color" id="cardBg" value="#ffffff" />
+        </div>
+        <div class="col">
+          <label>Shadow Colour</label>
+          <input type="color" id="cardShadow" value="#6c5ce7" />
+        </div>
+      </div>
+
+      <label>Plate Opacity (0 = hide)</label>
+      <input type="range" id="cardAlpha" min="0" max="1" step="0.01" value="0.7"/>
+
+      <div class="flex">
+        <div class="col">
+          <label>Item Icon Size (px)</label>
+          <input type="range" id="itemIconSize" min="24" max="90" step="1" value="48"/>
+        </div>
+        <div class="col">
+          <label>Item Text Size (px)</label>
+          <input type="range" id="itemTextSize" min="10" max="34" step="1" value="18"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>🧰 UI Assets</h3>      <div class="flex">
+        <div class="col">
+          <label>Score Icon (URL)</label>
+          <input type="text" id="sIco" value="https://cdn-icons-png.flaticon.com/512/11726/11726053.png" />
+        </div>
+        <div class="col">
+          <label>Life Icon (URL)</label>
+          <input type="text" id="lIco" value="https://cdn-icons-png.flaticon.com/512/833/833472.png" />
+        </div>
+      </div>
+
+      <div class="flex">
+        <div class="col">
+          <label>UI Size</label>
+          <input type="range" id="uiScale" min="20" max="90" step="1" value="40"/>
+        </div>
+        <div class="col">
+          <label>Lives Amount</label>
+          <input type="number" id="livesCount" value="3" />
+        </div>
+      </div>
+
+      <div style="border-top:1px dashed #ddd; margin-top:12px; padding-top:12px;">
+        <div class="flex">
+          <div class="col">
+            <label>Score Panel BG Colour</label>
+            <input type="color" id="scorePanelColor" value="#000000" />
+          </div>
+          <div class="col">
+            <label>Score Panel BG Opacity</label>
+            <input type="range" id="scorePanelOpacity" min="0" max="1" step="0.01" value="0.60"/>
+          </div>
+        </div>
+
+        <div class="flex">
+          <div class="col">
+            <label>Score Text Colour</label>
+            <input type="color" id="scoreTextColor" value="#ffffff" />
+          </div>
+          <div class="col">
+            <label>Neon colour (bins glow on drag)</label>
+            <input type="color" id="binNeon" value="#00e5ff" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3>🎮 Gameplay</h3>
+      <div class="row">
+        <input type="checkbox" id="timerEnabled" checked>
+        <small>Enable Timer</small>
+      </div>
+
+      <label>Timer Icon URL</label>
+      <input type="text" id="timerIconUrl" value="https://cdn-icons-png.flaticon.com/512/2784/2784459.png"/>
+
+      <div id="timerControls">
+        <div class="flex">
+          <div class="col">
+            <label>Timer Mode</label>
+            <select id="timerMode">
+              <option value="countdown" selected>Countdown (T → 0)</option>
+              <option value="updown">Up & Down (0 → T → 0)</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>Time Limit (sec)</label>
+            <input type="number" id="timeLimit" value="45" min="5" max="999">
+          </div>
+        </div>
+
+        <label>Wrong Answer Time Penalty (sec)</label>
+        <input type="range" id="wrongTimePenalty" min="0" max="10" step="1" value="2">
+      </div>
+
+      
+      <div style="border-top:1px dashed #ddd; margin-top:12px; padding-top:12px;">
+        <div class="row" style="margin:0 0 8px 0;">
+          <input type="checkbox" id="randomScoreEnabled" checked>
+          <small>Random score (min–max)</small>
+        </div>
+
+        <div class="flex" style="align-items:flex-end;">
+          <div class="col" id="fixedCorrectWrap">
+            <label>Correct Answer Score</label>
+            <input type="range" id="correctScore" min="0" max="50" step="1" value="10">
+          </div>
+
+          <div class="col">
+            <div class="row" style="margin:0 0 4px 0;">
+              <input type="checkbox" id="streakEnabled" checked>
+              <small>Bonus (streak)</small>
+            </div>
+            <label>Streak Max Bonus</label>
+            <input type="range" id="streakCap" min="0" max="30" step="1" value="6">
+          </div>
+        </div>
+
+        <div class="flex" id="randomWrap" style="align-items:flex-end; display:none;">
+          <div class="col">
+            <label>Correct Score MIN</label>
+            <input type="range" id="scoreMin" min="0" max="50" step="1" value="6">
+          </div>
+          <div class="col">
+            <label>Correct Score MAX</label>
+            <input type="range" id="scoreMax" min="0" max="50" step="1" value="14">
+          </div>
+        </div>
+
+        <div class="flex" style="align-items:flex-end;">
+          <div class="col">
+            <label>Wrong Answer Score Penalty</label>
+            <input type="range" id="wrongScorePenalty" min="0" max="30" step="1" value="5">
+          </div>
+          <div class="col"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="section">
+      <h3>📦 Categories</h3>
+
+      <div class="flex">
+        <div class="col">
+          <label>Boxes Count</label>
+          <select id="boxCount">
+            <option value="2" selected>2 Boxes</option>
+            <option value="3">3 Boxes</option>
+            <option value="4">4 Boxes</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Bin Icon Size (px)</label>
+          <input type="range" id="binIconSize" min="50" max="200" step="1" value="120"/>
+        </div>
+      </div>
+
+      <div id="boxes-configs"></div>
+    </div>
+
+    <div class="section">
+      <h3>📝 Tasks</h3>
+      <textarea id="items" rows="6">Shark | 1 | https://cdn-icons-png.flaticon.com/512/2194/2194811.png
+Submarine | 2 | https://cdn-icons-png.flaticon.com/512/3063/3063822.png
+Anchor | 1 | https://cdn-icons-png.flaticon.com/512/2043/2043132.png
+Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
+    </div>
+
+    <div class="section">
+      <h3>🧲 Game Mode</h3>
+      <label>Mode</label>
+      <select id="gameMode">
+        <option value="return" selected>Magnet (return)</option>
+        <option value="disappear">Disappear</option>
+      </select>
+    </div>
+
+    <div class="btn-group">
+      <button id="copy-btn" class="btn" onclick="copy()">📋 Copy the Code</button>
+    </div>
+  </div>
+
+  <div id="view">
+    <iframe id="game-preview"></iframe>
+  </div>
+
+  <div id="toast">Code copied!</div>
+
+<script>
+  const badgeEl = () => document.getElementById('badgeEl');
+  let badgeTimer = null;
+  function flashUpdated(){
+    const el = badgeEl();
+    if (!el) return;
+    el.classList.add('show');
+    clearTimeout(badgeTimer);
+    badgeTimer = setTimeout(() => el.classList.remove('show'), 520);
+  }
+
+  const toastEl = () => document.getElementById('toast');
+  let toastTimer = null;
+  function toast(msg){
+    const el = toastEl();
+    if (!el) return;
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 900);
+  }
+
+  function toggleBoxes() {
+    const count = parseInt(document.getElementById('boxCount').value, 10);
+    const container = document.getElementById('boxes-configs');
+    container.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+      container.innerHTML += `
+        <div style="border-top:1px dashed #ccc; margin-top:10px; padding-top:10px">
+          <div class="flex">
+            <div class="col">
+              <label>Box ${i} Title</label>
+              <input type="text" id="b${i}T" value="Category ${i}">
+            </div>
+            <div class="col">
+              <label>Box ${i} Icon URL</label>
+              <input type="text" id="b${i}I" value="https://cdn-icons-png.flaticon.com/512/3058/3058995.png">
+            </div>
+          </div>
+        </div>`;
+    }
+  }
+
+  function hexToRgba(hex, alpha) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function parseItems(text) {
+    const lines = String(text || '')
+      .replace(/\r/g, '')
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean);
+
+    return lines.map(line => {
+      const parts = line.split('|').map(s => (s || '').trim());
+      const t = parts[0] || '';
+      let c = (parts[1] || '1').trim();
+      if (!c) c = '1';
+      const i = parts[2] || '';
+      return { t, c, i };
+    });
+  }
+
+  function escForSrcdoc(s){
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function clampNum(n, a, b){
+    n = Number.isFinite(n) ? n : a;
+    return Math.max(a, Math.min(b, n));
+  }
+
+  function ensureMinMax(minEl, maxEl){
+    const minV = parseInt(minEl.value, 10) || 0;
+    const maxV = parseInt(maxEl.value, 10) || 0;
+    if (maxV < minV) maxEl.value = String(minV);
+  }
+
+  function syncTimerControls(){
+    const enabled = document.getElementById('timerEnabled').checked;
+    const block = document.getElementById('timerControls');
+    block.classList.toggle('disabled', !enabled);
+  }
+
+  function syncScoreControls(){
+    const rndEl = document.getElementById('randomScoreEnabled');
+    const fixed = document.getElementById('fixedCorrectWrap');
+    const randomWrap = document.getElementById('randomWrap');
+    if (!rndEl || !fixed || !randomWrap) return;
+    const rnd = !!rndEl.checked;
+    fixed.style.display = rnd ? 'none' : '';
+    randomWrap.style.display = rnd ? '' : 'none';
+    if (rnd) {
+      const minEl = document.getElementById('scoreMin');
+      const maxEl = document.getElementById('scoreMax');
+      if (minEl && maxEl) ensureMinMax(minEl, maxEl);
+    }
+  }
+
+  function build({ silentBadge = false } = {}) {
+    const v = (id) => document.getElementById(id)?.value ?? '';
+    const bCount = parseInt(v('boxCount'), 10);
+    const dir = v('moveDir');
+
+    const speedLevel = Math.min(10, Math.max(1, parseInt(v('speed'), 10) || 4));
+    const speedMap = { 1: 14, 2: 12, 3: 10, 4: 8.5, 5: 7, 6: 6, 7: 5.2, 8: 4.5, 9: 4, 10: 3.5 };
+    const speedSeconds = speedMap[speedLevel];
+
+    const mode = v('gameMode') || 'return';
+    const maxLives = parseInt(v('livesCount'), 10) || 3;
+
+    const mask = v('itemMask');
+
+    const alpha = parseFloat(v('cardAlpha'));
+    const plateBg = alpha <= 0 ? 'transparent' : hexToRgba(v('cardBg'), alpha);
+    const sColor = v('cardShadow');
+    const textOpacity = parseFloat(v('fOpacity'));
+
+    const itemIconSize = parseInt(v('itemIconSize'), 10) || 48;
+    const itemTextSize = parseInt(v('itemTextSize'), 10) || 18;
+
+    const uiScale = parseInt(v('uiScale'), 10) || 40;
+
+    const scorePanelColor = v('scorePanelColor') || '#000000';
+    const scorePanelOpacityRaw = Math.max(0, Math.min(1, parseFloat(v('scorePanelOpacity')) || 0));
+    const scorePanelOpacity = scorePanelOpacityRaw;
+    const scoreTextColor = v('scoreTextColor') || '#ffffff';
+    const SCORE_PANEL_RADIUS_PX = 24;
+
+    const SCORE_PANEL_OFF_THRESHOLD = 0.02;
+    const blurPx = Math.max(0, Math.round(scorePanelOpacity * 8));
+    const scorePanelChromeCSS = (scorePanelOpacity <= SCORE_PANEL_OFF_THRESHOLD)
+      ? 'padding:0; backdrop-filter:none; background:transparent;'
+      : `padding:8px 18px;
+         backdrop-filter: blur(${blurPx}px);
+         background:${hexToRgba(scorePanelColor, scorePanelOpacity)};`;
+
+    const binNeon = v('binNeon') || '#00e5ff';
+    const binIconSize = parseInt(v('binIconSize'), 10) || 120;
+
+    const itArr = parseItems(v('items'));
+
+    const TIMER_ENABLED = document.getElementById('timerEnabled').checked ? 'true' : 'false';
+    const TIMER_MODE = v('timerMode') || 'countdown';
+    const TIME_LIMIT = clampNum(parseInt(v('timeLimit'),10)||45, 1, 999);
+    const WRONG_TIME_PENALTY = clampNum(parseInt(v('wrongTimePenalty'),10)||0, 0, 999);
+
+    const RANDOM_SCORE_ENABLED = document.getElementById('randomScoreEnabled').checked ? 'true' : 'false';
+    const CORRECT_SCORE = clampNum(parseInt(v('correctScore'),10)||0, 0, 999);
+    const SCORE_MIN = clampNum(parseInt(v('scoreMin'),10)||0, 0, 999);
+    const SCORE_MAX = clampNum(parseInt(v('scoreMax'),10)||0, 0, 999);
+    const WRONG_SCORE_PENALTY = clampNum(parseInt(v('wrongScorePenalty'),10)||0, 0, 999);
+
+    const STREAK_ENABLED = document.getElementById('streakEnabled').checked ? 'true' : 'false';
+    const STREAK_CAP = clampNum(parseInt(v('streakCap'),10)||0, 0, 999);
+
+    const TIMER_ICON_URL = v('timerIconUrl') || '';
+
+    let boxesHTML = '';
+    for (let i = 1; i <= bCount; i++) {
+      boxesHTML += `<div class="bin" data-t="${i}">
+        <img class="bin-ico" src="${v('b' + i + 'I')}" alt="">
+        <b>${v('b' + i + 'T')}</b>
+      </div>`;
+    }
+
+    const gameCode = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=${String(v('gFont')).replace(/ /g,'+')}&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"><\/script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"><\/script>
+<style>
+  :root{ --bin-neon:${binNeon}; }
+  body{
+    margin:0; overflow:hidden;
+    font-family:'${v('gFont')}', sans-serif;
+    background:url('${v('bg')}') center/cover no-repeat;
+    height:100vh; user-select:none;
+  }
+
+  #ui{
+    position:absolute; top:15px; width:100%;
+    display:flex; justify-content:space-between;
+    padding:0 30px; box-sizing:border-box;
+    z-index:100; pointer-events:none;
+    gap:12px;
+    align-items:flex-start;
+  }
+
+  .ui-pill{
+    pointer-events:auto;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    border-radius:${SCORE_PANEL_RADIUS_PX}px;
+    ${scorePanelChromeCSS}
+    color:${scoreTextColor};
+    font-weight:900;
+    white-space:nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .score-board{
+    max-width:70vw;
+    font-size:${Math.round(uiScale * 0.60)}px;
+  }
+  .score-board img{
+    width:${uiScale}px; height:${uiScale}px;
+    object-fit:contain;
+    flex:0 0 auto;
+  }
+
+  .timer-board{
+    font-size:${Math.max(12, Math.round(uiScale * 0.55))}px;
+    gap:10px;
+  }
+  .timer-board img{
+    width:${Math.max(14, Math.round(uiScale * 0.72))}px;
+    height:${Math.max(14, Math.round(uiScale * 0.72))}px;
+    object-fit:contain;
+    display:${TIMER_ICON_URL ? 'block' : 'none'};
+    flex:0 0 auto;
+  }
+
+  .heart{ width:${uiScale}px; height:${uiScale}px; margin-left:6px; transition:0.4s; }
+  .heart.lost{ opacity:0.1; filter:grayscale(1); transform:scale(0.8); }
+
+  #belt-container{
+    position:absolute; top:25%;
+    width:100%; height:220px; overflow:hidden;
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  }
+  #belt{ position:absolute; display:flex; width:fit-content; will-change:transform; }
+  .item-slot{ width:220px; height:180px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  .item{
+    width:180px; height:140px;
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    ${mask ? `background:url('${mask}') center/contain no-repeat;` : ''}
+    cursor:grab; touch-action:none;
+  }
+
+  .plate{
+    background-color:${plateBg};
+    ${alpha <= 0 ? 'box-shadow:none;' : ('box-shadow: 0 5px 20px ' + sColor + 'cc;')}
+    padding:10px; border-radius:15px;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    min-width:90px; z-index:2;
+    pointer-events:none;
+  }
+
+  .plate img{
+    width:${itemIconSize}px;
+    height:${itemIconSize}px;
+    max-width:72px;
+    max-height:72px;
+    object-fit:contain;
+    margin-bottom:6px;
+    opacity:${textOpacity};
+    display:${textOpacity <= 0 ? 'none' : 'block'};
+  }
+
+  .plate span{
+    font-size:${itemTextSize}px;
+    color:${v('fColor')};
+    opacity:${textOpacity};
+    display:${textOpacity <= 0 ? 'none' : 'block'};
+    font-weight:900;
+    text-align:center;
+    line-height:1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+
+  .item.dragging{ position:fixed !important; z-index:2000; transform:scale(1.1) !important; pointer-events:none; }
+  .item.returning{ position:fixed !important; z-index:2000; pointer-events:none; transition:none !important; }
+
+  .bins{
+    position:absolute; bottom:20px; width:100%;
+    display:flex; justify-content:space-around;
+    gap:20px; padding:0 20px; box-sizing:border-box;
+  }
+
+  .bin{
+    text-align:center; flex:1; max-width:240px;
+    color:#fff; border-radius:14px; padding:6px 8px;
+    box-sizing:border-box;
+    will-change:filter, transform;
+    transition:transform 160ms ease, filter 160ms ease;
+  }
+
+  .bin-ico{
+    height:${binIconSize}px;
+    width:auto; max-width:100%;
+    object-fit:contain; display:block;
+    margin:0 auto;
+  }
+
+  .bin b{
+    display:block;
+    text-shadow:none;
+    font-size:${v('fSize')}px;
+    margin-top:6px;
+    opacity:${textOpacity};
+    color:${v('fColor')};
+    font-weight:900;
+  }
+
+  .bin.drag-ready{
+    filter: drop-shadow(0 0 10px color-mix(in srgb, var(--bin-neon) 55%, transparent));
+    transform:scale(1.03);
+  }
+  .bin.drop-active{
+    filter:
+      drop-shadow(0 0 8px var(--bin-neon))
+      drop-shadow(0 0 18px var(--bin-neon))
+      drop-shadow(0 0 30px var(--bin-neon));
+    transform:scale(1.07);
+  }
+
+  .shake{ animation: shake 0.4s both; }
+  @keyframes shake{
+    10%, 90% { transform: translate3d(-1px, 0, 0); }
+    20%, 80% { transform: translate3d(2px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+    40%, 60% { transform: translate3d(4px, 0, 0); }
+  }
+
+  .confetti{
+    position:fixed; width:8px; height:12px;
+    border-radius:2px; pointer-events:none;
+    z-index:6000; will-change:transform, opacity;
+    animation: confettiPop 850ms ease-out forwards;
+  }
+  @keyframes confettiPop{
+    0%{ transform: translate(0,0) rotate(0deg) scale(1); opacity:1; }
+    100%{ transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.9); opacity:0; }
+  }
+
+  .sad-emoji{
+    position:fixed; font-size:20px;
+    pointer-events:none; z-index:6000;
+    will-change:transform, opacity;
+    animation: sadFall 1000ms ease-out forwards;
+  }
+  @keyframes sadFall{
+    0%{ transform: translate(0,0) rotate(0deg) scale(1); opacity:1; }
+    40%{ transform: translate(var(--dx), -30px) rotate(var(--rot)); }
+    100%{ transform: translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(0.85); opacity:0; }
+  }
+
+
+  /* ===== START SCREEN (Magic Wand + READY) ===== */
+  #startScreen{
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.88);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:8000;
+    opacity:1;
+    transition: opacity 420ms ease;
+  }
+  #startScreen.fadeOut{ opacity:0; }
+
+  .startBox{
+    position:relative;
+    text-align:center;
+    color:#fff;
+    padding:20px 18px 10px;
+    width:min(520px, 92vw);
+  }
+
+  /* Wand floats above, then taps the button */
+  #wandWrap{
+    z-index:9001;
+    position:absolute;
+    left:35%;
+    top:115px;
+    width:190px;
+    height:190px;
+    transform: translate(-50%, 0) rotate(-14deg);
+    pointer-events:none;
+    filter: drop-shadow(0 0 14px rgba(255,255,255,0.10));
+    transition: transform 760ms cubic-bezier(.2,.95,.1,1);
+    will-change: transform;
+  }
+  #wandAnim{ width:100%; height:100%; }
+
+  
+
+#startBtn{
+  background:none;
+  border:none;
+  padding:0;
+  cursor:pointer;
+  position:relative;
+  z-index:9000;
+}
+
+  
+  #startBtn:active{ transform:scale(1.03); }
+  #startBtn[disabled]{ opacity:0.75; cursor:default; }
+
+  /* Sparkles burst */
+  .sparkle{
+    position:fixed;
+    left:0; top:0;
+    pointer-events:none;
+    z-index:9000;
+    font-size:18px;
+    opacity:0;
+    transform: translate(-50%,-50%) scale(0.6);
+    animation: sparkleFly 520ms ease-out forwards;
+    will-change: transform, opacity;
+  }
+  @keyframes sparkleFly{
+    0%{ opacity:0; transform: translate(-50%,-50%) scale(0.4); }
+    15%{ opacity:1; }
+    100%{ opacity:0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(1.15) rotate(var(--rot)); }
+  }
+  
+  #startBtn img{
+    width:260px;
+    height:auto;
+    display:block;
+    pointer-events:none;
+  }
+
+  /* ===== /START SCREEN ===== */
+
+  #end{
+    position:fixed; top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.88);
+    display:none; flex-direction:column;
+    align-items:center; justify-content:center;
+    color:#fff; z-index:5000; text-align:center;
+  }
+  #end img{ width:120px; margin-bottom:10px; }
+  #end h1{ margin:0; font-size:32px; }
+  #end p{ font-size:20px; color:#20bf6b; margin:10px 0; font-weight:900; }
+  #end button{
+    padding:15px 40px; border-radius:12px;
+    cursor:pointer; background:none;
+    color:#fff; border:none;
+    font-weight:900; font-size:16px;
+    transition:0.2s;
+  }
+  #end button:hover{ background:#26de81; transform:scale(1.05); }
+</style>
+</head>
+
+<body>
+
+  <div id="startScreen">
+    <div class="startBox">
+      <div id="wandWrap" aria-hidden="true"><div id="wandAnim"></div></div>
+      
+<button id="startBtn">
+  <img src="https://i.postimg.cc/d0pyF8sY/Add-a-heading.png" alt="Ready">
+</button>
+
+    </div>
+  </div>
+
+
+  <div id="ui">
+    <div class="ui-pill score-board" id="scoreBoard">
+      <img src="${v('sIco')}" alt="">
+      <span class="score-num"><span id="s">0</span></span>
+    </div>
+
+    <div class="ui-pill timer-board" id="timerBoard" style="display:${TIMER_ENABLED==='true' ? 'flex' : 'none'};">
+      <img src="${TIMER_ICON_URL}" alt="">
+      <span id="timeVal">00:00</span>
+    </div>
+
+    <div id="lives-container">${Array(maxLives).fill('<img class="heart" src="'+v('lIco')+'" alt="">').join('')}</div>
+  </div>
+
+  <div id="belt-container">
+    <div id="belt">
+      ${itArr.map((i, idx) => `
+        <div class="item-slot" data-slot="${idx}">
+          <div class="item" data-c="${String(i.c)}" data-slot="${idx}">
+            <div class="plate">
+              ${i.i ? '<img src="'+i.i+'" alt="">' : ''}
+              <span>${i.t}</span>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  </div>
+
+  <div class="bins">${boxesHTML}</div>
+
+  <div id="end">
+    <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" alt="">
+    <h1 id="m"></h1>
+    <p id="fs"></p>
+    <button onclick="location.reload()">PLAY AGAIN</button>
+  </div>
+
+<script>
+  const mode = "${mode}";
+  const dir = "${dir}";
+  const speedSeconds = ${speedSeconds};
+  const TIMER_ENABLED = ${TIMER_ENABLED};
+  const TIMER_MODE = "${TIMER_MODE}";
+  const TIME_LIMIT = ${TIME_LIMIT};
+  const WRONG_TIME_PENALTY = ${WRONG_TIME_PENALTY};
+  const RANDOM_SCORE_ENABLED = ${RANDOM_SCORE_ENABLED};
+  const CORRECT_SCORE = ${CORRECT_SCORE};
+  const SCORE_RANDOM_MIN = ${Math.min(SCORE_MIN, SCORE_MAX)};
+  const SCORE_RANDOM_MAX = ${Math.max(SCORE_MIN, SCORE_MAX)};
+  const WRONG_SCORE_PENALTY = ${WRONG_SCORE_PENALTY};
+  const STREAK_ENABLED = ${STREAK_ENABLED};
+  const STREAK_CAP_BONUS = ${STREAK_CAP};
+  // 🔹 Load canvas-confetti safely inside iframe
+  let confettiReady = false;
+  (function loadConfetti(){
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
+    s.onload = () => { confettiReady = true; };
+    s.onerror = () => { confettiReady = false; };
+    document.head.appendChild(s);
+  })();
+
+
+  let score = 0, lives = ${maxLives}, isGameOver = false, streak = 0;
+  let gameStarted = false;
+  const belt = document.getElementById('belt');
+  const SLOT_W = 220;
+  const totalSlots = Math.max(1, belt.children.length);
+  const loopDistance = SLOT_W * totalSlots;
+  const pxPerSec = loopDistance / Math.max(1, speedSeconds);
+
+  let offset = 0, lastT = null, running = false;
+  const scoreEl = document.getElementById('s');
+  const scoreBoard = document.getElementById('scoreBoard');
+  const BASE_SCORE_FONT = ${Math.round(uiScale * 0.60)};
+
+  let timeDir = 1, timeLeft = TIME_LIMIT, timeUp = 0, timerTick = null;
+
+  function clamp(n, a, b){ return Math.max(a, Math.min(b, n)); }
+  function fmtTime(sec){
+    sec = Math.max(0, Math.floor(sec));
+    return String(Math.floor(sec / 60)).padStart(2,'0') + ":" + String(sec % 60).padStart(2,'0');
+  }
+
+  function updateTimerUI(){
+    const el = document.getElementById('timeVal');
+    if(!el) return;
+    el.textContent = fmtTime((TIMER_MODE === "countdown") ? timeLeft : timeUp);
+  }
+
+  function stopTimer(){ if(timerTick) clearInterval(timerTick); timerTick = null; }
+  function endByTime(){ showEnd("TIME UP!"); }
+
+  function applyTimePenalty(sec){
+    if(!TIMER_ENABLED) return;
+    sec = Math.max(0, sec|0);
+    if(TIMER_MODE === "countdown"){
+      timeLeft = clamp(timeLeft - sec, 0, TIME_LIMIT);
+      if(timeLeft <= 0) endByTime();
+    }else{
+      timeUp = clamp(timeUp - sec, 0, TIME_LIMIT);
+      if(timeUp <= 0 && timeDir === -1) endByTime();
+    }
+    updateTimerUI();
+  }
+
+  function startTimer(){
+    if(!TIMER_ENABLED) return;
+    updateTimerUI();
+    stopTimer();
+    timerTick = setInterval(() => {
+      if(isGameOver) return;
+      if(TIMER_MODE === "countdown"){
+        timeLeft = clamp(timeLeft - 1, 0, TIME_LIMIT);
+        if(timeLeft <= 0) endByTime();
+      }else{
+        timeUp = clamp(timeUp + timeDir, 0, TIME_LIMIT);
+        if(timeUp >= TIME_LIMIT) timeDir = -1;
+        else if(timeUp <= 0 && timeDir === -1) { endByTime(); return; }
+      }
+      updateTimerUI();
+    }, 1000);
+  }
+
+  function fitScoreFont(){
+    const digits = String(score).length;
+    let size = BASE_SCORE_FONT;
+    if (digits >= 7) size = Math.max(12, BASE_SCORE_FONT - (digits - 6) * 2);
+    scoreBoard.style.fontSize = size + 'px';
+  }
+
+  function setScore(newScore){
+    score = Math.max(0, newScore|0);
+    scoreEl.textContent = score;
+    fitScoreFont();
+  }
+
+  function beltTick(t){
+    if (!running) return;
+    if (lastT === null) lastT = t;
+    const dt = (t - lastT) / 1000; lastT = t;
+    if (dir === "left") {
+      offset -= pxPerSec * dt;
+      if (offset <= -SLOT_W) { offset += SLOT_W; belt.appendChild(belt.firstElementChild); }
+    } else {
+      offset += pxPerSec * dt;
+      if (offset >= SLOT_W) { offset -= SLOT_W; belt.prepend(belt.lastElementChild); }
+    }
+    belt.style.transform = 'translateX(' + offset + 'px)';
+    requestAnimationFrame(beltTick);
+  }
+  requestAnimationFrame(beltTick);
+
+  function updateLives() {
+    const h = document.querySelectorAll('.heart');
+    let idx = ${maxLives} - lives - 1;
+    if(h[idx]) h[idx].classList.add('lost');
+    if(lives <= 0) showEnd("GAME OVER");
+  }
+
+  function checkFinish() { if (document.querySelectorAll('.item').length === 0) showEnd("WELL DONE!"); }
+
+  function showEnd(msg) {
+    if(isGameOver) return;
+    isGameOver = true; running = false; stopTimer();
+    const endScreen = document.getElementById('end');
+    endScreen.style.display = 'flex';
+    document.getElementById('m').innerText = msg;
+    document.getElementById('fs').innerText = 'Final Score: ' + score;
+  }
+
+  function setBinsDragReady(on){
+    document.querySelectorAll('.bin').forEach(b => b.classList.toggle('drag-ready', !!on));
+    if (!on) document.querySelectorAll('.bin').forEach(b => b.classList.remove('drop-active'));
+  }
+
+  
+  function confettiBurst(fromEl){
+    if(!confettiReady || typeof confetti !== "function") return;
+    const r = fromEl.getBoundingClientRect();
+    const x = (r.left + r.width/2) / window.innerWidth;
+    const y = (r.top + r.height*0.35) / window.innerHeight;
+
+    confetti({
+      particleCount: 70,
+      spread: 80,
+      startVelocity: 38,
+      origin: { x, y }
+    });
+  }
+function sadEmojiBurst(fromEl){
+    const r = fromEl.getBoundingClientRect(), x = r.left + r.width/2, y = r.top + 40;
+    for(let i=0;i<8;i++){
+      const e = document.createElement('div');
+      e.className = 'sad-emoji'; e.innerText = ['😢','😭','☹️','🙁'][i % 4];
+      e.style.left = x + 'px'; e.style.top = y + 'px';
+      e.style.setProperty('--dx', ((Math.random()-0.5)*140) + 'px');
+      e.style.setProperty('--dy', (90 + Math.random()*80) + 'px');
+      e.style.setProperty('--rot', (Math.random()*720 - 360) + 'deg');
+      document.body.appendChild(e);
+      setTimeout(()=>e.remove(), 1000);
+    }
+  }
+
+  function returnItem(el) {
+    const home = el.__home;
+    if (!home || !home.isConnected) { el.remove(); checkFinish(); return; }
+    el.classList.remove('dragging'); el.classList.add('returning');
+    let x = parseFloat(el.style.left), y = parseFloat(el.style.top), start = performance.now();
+    function tick(now) {
+      if (isGameOver) return;
+      const t = Math.min(1, (now - start) / 420), k = 1 - Math.pow(1 - t, 3), r = home.getBoundingClientRect();
+      const follow = 0.18 + 0.62 * k;
+      x += (r.left - x) * follow; y += (r.top - y) * follow;
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+      if (t < 1) requestAnimationFrame(tick);
+      else { el.classList.remove('returning'); Object.assign(el.style, {left:'',top:'',width:'',height:''}); home.appendChild(el); }
+    }
+    requestAnimationFrame(tick);
+  }
+
+  interact('.item').draggable({
+    listeners: {
+      start(e) {
+        if(isGameOver || !gameStarted) return;
+        const el = e.target; el.__home = el.parentNode;
+        const r = el.getBoundingClientRect();
+        Object.assign(el.style, { width: r.width+'px', height: r.height+'px', left: r.left+'px', top: r.top+'px' });
+        el.classList.add('dragging'); document.body.appendChild(el);
+        setBinsDragReady(true);
+      },
+      move(e) {
+        if(!gameStarted) return;
+        e.target.style.left = (parseFloat(e.target.style.left) || 0) + e.dx + 'px';
+        e.target.style.top = (parseFloat(e.target.style.top) || 0) + e.dy + 'px';
+      },
+      end(e) {
+        if(isGameOver || !gameStarted) return;
+        setBinsDragReady(false);
+        if(e.target.parentNode === document.body) (mode === 'return' ? returnItem(e.target) : (e.target.remove(), checkFinish()));
+      }
+    }
+  });
+
+  interact('.bin').dropzone({
+    overlap: 0.15,
+    ondragenter(e) { e.target.classList.add('drop-active'); },
+    ondragleave(e) { e.target.classList.remove('drop-active'); },
+    ondrop(e) {
+      if(isGameOver || !gameStarted) return;
+      const item = e.relatedTarget, bin = e.target;
+      bin.classList.remove('drop-active'); setBinsDragReady(false);
+      if(item.dataset.c === bin.dataset.t) {
+        streak = STREAK_ENABLED ? (streak + 1) : 0;
+        let bonus = (STREAK_ENABLED && streak >= 2) ? (streak === 2 ? 2 : (streak === 3 ? 4 : STREAK_CAP_BONUS)) : 0;
+        const base = (RANDOM_SCORE_ENABLED ? (Math.floor(Math.random()*(SCORE_RANDOM_MAX-SCORE_RANDOM_MIN+1)) + SCORE_RANDOM_MIN) : CORRECT_SCORE);
+        setScore(score + base + bonus);
+        confettiBurst(bin); item.remove(); checkFinish();
+      } else {
+        streak = 0; if(WRONG_SCORE_PENALTY > 0) setScore(score - WRONG_SCORE_PENALTY);
+        if(WRONG_TIME_PENALTY > 0) applyTimePenalty(WRONG_TIME_PENALTY);
+        lives--; updateLives(); sadEmojiBurst(bin); bin.classList.add('shake');
+        setTimeout(() => bin.classList.remove('shake'), 420);
+        if (mode === 'return') returnItem(item); else { item.remove(); checkFinish(); }
+      }
+    }
+  });
+
+
+  // ===== START SCREEN LOGIC =====
+  (function initStartScreen(){
+    const ss = document.getElementById('startScreen');
+    const btn = document.getElementById('startBtn');
+    const wandWrap = document.getElementById('wandWrap');
+    const wand = document.getElementById('wandAnim');
+
+    // lottie wand
+    if (typeof lottie !== "undefined" && wand){
+      lottie.loadAnimation({
+        container: wand,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1fa84/lottie.json"
+      });
+    }
+
+    function sparkleBurst(x, y){
+      const glyphs = ["✨","✦","✧","⋆","✺","✷"];
+      for(let i=0;i<14;i++){
+        const sp = document.createElement('div');
+        sp.className = 'sparkle';
+        sp.textContent = glyphs[i % glyphs.length];
+        sp.style.left = x + 'px';
+        sp.style.top = y + 'px';
+        sp.style.setProperty('--dx', ((Math.random()-0.5)*180).toFixed(1) + 'px');
+        sp.style.setProperty('--dy', ((Math.random()-0.65)*160).toFixed(1) + 'px');
+        sp.style.setProperty('--rot', (Math.random()*520 - 260).toFixed(0) + 'deg');
+        document.body.appendChild(sp);
+        setTimeout(()=>sp.remove(), 560);
+      }
+    }
+
+    function startGame(){
+      if (gameStarted || isGameOver) return;
+      gameStarted = true;
+      running = true;
+      startTimer();
+      requestAnimationFrame(beltTick);
+    }
+
+    function wandTapThenStart(){
+      if (gameStarted || isGameOver) return;
+      if (!btn || !wandWrap) { 
+        if (ss) ss.style.display='none';
+        startGame();
+        return;
+      }
+
+      
+
+      // Compute where the wand should "touch" the button (near upper-left)
+      const br = btn.getBoundingClientRect();
+      const wr = wandWrap.getBoundingClientRect();
+
+      const targetX = br.left + br.width*0.50;
+      const targetY = br.top + br.height*0.58;
+
+      const dx = targetX - (wr.left + wr.width*0.92);
+      const dy = targetY - (wr.top + wr.height*0.58);
+
+      // Move wand to the button
+      wandWrap.style.transform = 'translate(calc(-50% + ' + dx + 'px), ' + dy + 'px) rotate(-14deg)';
+
+      // Sparkles at the "touch" point
+      setTimeout(() => {
+        sparkleBurst(targetX, targetY);
+      }, 520);
+
+      // Fade out screen, then start
+      setTimeout(() => {
+        if (ss) ss.classList.add('fadeOut');
+        setTimeout(() => {
+          if (ss) ss.style.display = 'none';
+          startGame();
+        }, 420);
+      }, 680);
+    }
+
+    if (btn){
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        wandTapThenStart();
+      });
+    }
+
+    // Keyboard start
+    window.addEventListener('keydown', (e) => {
+      if (gameStarted) return;
+      if (e.key === 'Enter' || e.key === ' ') wandTapThenStart();
+    });
+  })();
+  // ===== /START SCREEN LOGIC =====
+
+  setScore(0);
+<\/script>
+</body>
+</html>`;
+
+    const blob = new Blob([gameCode], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    document.getElementById('game-preview').src = url;
+
+    window.__LAST_IFRAME__ =
+      `<iframe style="width:100%; height:540px; border:0; overflow:hidden; background:transparent;" ` +
+      `srcdoc="${escForSrcdoc(gameCode)}"></iframe>`;
+
+    if (!silentBadge) flashUpdated();
+  }
+
+  async function copy() {
+    const btn = document.getElementById('copy-btn');
+    const originalText = btn.textContent;
+    const text = window.__LAST_IFRAME__ || '';
+    if (!text) return;
+    try{
+      await navigator.clipboard.writeText(text);
+      btn.classList.add('success'); btn.textContent = '✅ Copied!'; toast('Code copied!');
+      setTimeout(() => { btn.classList.remove('success'); btn.textContent = originalText; }, 1200);
+    }catch(e){ toast('Copy failed'); }
+  }
+
+  function debounce(fn, wait = 250){
+    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
+  }
+  const scheduleBuild = debounce(() => build(), 250);
+
+  function hookLivePreview(){
+    const panel = document.getElementById('panel');
+    panel.oninput = (e) => {
+      const el = e.target;
+      if (!el || !el.id) return;
+      if (el.id === 'boxCount') toggleBoxes();
+      if (el.id === 'timerEnabled') syncTimerControls();
+
+
+
+
+
+      if (el.id === 'randomScoreEnabled') syncScoreControls();
+      if (el.id === 'scoreMin' || el.id === 'scoreMax') {
+        const rndEl = document.getElementById('randomScoreEnabled');
+        if (rndEl && rndEl.checked) ensureMinMax(document.getElementById('scoreMin'), document.getElementById('scoreMax'));
+      }
+      scheduleBuild();
+    };
+  }
+window.onload = () => {
+    toggleBoxes();
+    syncTimerControls();
+    syncScoreControls();
+    build({ silentBadge: true });
+    hookLivePreview();
+  };
+
+  // 🔹 UX fix: clicking an open <select> closes it (no need to click outside)
+  (function initSelectToggle(){
+    document.querySelectorAll('select').forEach(sel => {
+      sel.addEventListener('mousedown', function(){
+        // mousedown fires before native open; use a flag to detect "second click"
+        if (this.dataset._open === '1') {
+          this.blur();
+          this.dataset._open = '0';
+        } else {
+          this.dataset._open = '1';
+        }
+      });
+      sel.addEventListener('change', function(){
+        // after choosing an option, allow the next click to open normally
+        this.dataset._open = '0';
+        this.blur();
+      });
+      sel.addEventListener('blur', function(){
+        this.dataset._open = '0';
+      });
+    });
+  })();
+
+
+    // 🐾 + ✨ Lottie decorations (editor only)
+  (function initLottieDecor(){
+    if (typeof lottie === "undefined") return;
+
+    // Title icons
+    const rocketEl = document.getElementById('titleRocket');
+    const sparkleEl = document.getElementById('titleSparkle');
+    if (rocketEl) {
+      lottie.loadAnimation({
+        container: rocketEl,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6f8/lottie.json"
+      });
+    }
+    if (sparkleEl) {
+      lottie.loadAnimation({
+        container: sparkleEl,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
+        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/2728/lottie.json"
+      });
+    }
+
+    // Subtle paws on the editor panel perimeter
+    const overlay = document.getElementById('paw-overlay');
+    if (!overlay) return;
+
+    function spawnPaw(){
+      if (document.hidden) return;
+
+      const paw = document.createElement("div");
+      paw.className = "paw";
+
+      const pad = 18;
+      const w = overlay.clientWidth;
+      const h = overlay.clientHeight;
+      if (w < 100 || h < 100) return;
+
+      const side = Math.floor(Math.random() * 4);
+      let x = 0, y = 0;
+      let rotation = 0;
+      const flip = Math.random() < 0.5 ? -1 : 1;
+
+      if(side === 0){ // top
+        x = Math.random() * w;
+        y = pad;
+        rotation = 180;
+      } else if(side === 1){ // right
+        x = w - pad;
+        y = Math.random() * h;
+        rotation = -90;
+      } else if(side === 2){ // bottom
+        x = Math.random() * w;
+        y = h - pad;
+        rotation = 0;
+      } else { // left
+        x = pad;
+        y = Math.random() * h;
+        rotation = 90;
+      }
+
+      paw.style.left = x + "px";
+      paw.style.top = y + "px";
+
+      // rotation + mirror (looks like cat walks different directions)
+      paw.style.transform = `scale(${flip}, 1) rotate(${rotation}deg)`;
+
+      overlay.appendChild(paw);
+
+      lottie.loadAnimation({
+        container: paw,
+        renderer: "svg",
+        loop: false,
+        autoplay: true,
+        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f43e/lottie.json"
+      });
+
+      setTimeout(() => paw.remove(), 3600);
+    }
+
+    // gentle rate
+    const pawTimer = setInterval(spawnPaw, 1800);
+
+    // stop if panel removed
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(overlay)) {
+        clearInterval(pawTimer);
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+  })();
+
+</script>
+</body>
+</html>
