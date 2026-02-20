@@ -1098,6 +1098,26 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   </div>
 
 <script>
+  // 🔹 Sound Library Initialization
+  const BASE_URL = "https://raw.githubusercontent.com/gothiksmile/speed_sorting/main/";
+  const sounds = {
+    ready: new Audio(BASE_URL + "ready.mp3"),
+    pick: new Audio(BASE_URL + "pick.mp3"),
+    drop: new Audio(BASE_URL + "drop.mp3"),
+    wrong: new Audio(BASE_URL + "wrong.mp3"),
+    correct: new Audio(BASE_URL + "correct.mp3"),
+    timeup: new Audio(BASE_URL + "timeup.mp3"),
+    win: new Audio(BASE_URL + "win.mp3"),
+    lose: new Audio(BASE_URL + "lose.mp3")
+  };
+
+  function playSound(name) {
+    if (sounds[name]) {
+      sounds[name].currentTime = 0;
+      sounds[name].play().catch(() => {});
+    }
+  }
+
   const mode = "${mode}";
   const dir = "${dir}";
   const speedSeconds = ${speedSeconds};
@@ -1112,7 +1132,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   const WRONG_SCORE_PENALTY = ${WRONG_SCORE_PENALTY};
   const STREAK_ENABLED = ${STREAK_ENABLED};
   const STREAK_CAP_BONUS = ${STREAK_CAP};
-  // 🔹 Load canvas-confetti safely inside iframe
+
   let confettiReady = false;
   (function loadConfetti(){
     const s = document.createElement("script");
@@ -1151,7 +1171,11 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
   function stopTimer(){ if(timerTick) clearInterval(timerTick); timerTick = null; }
-  function endByTime(){ showEnd("TIME UP!"); }
+  
+  function endByTime(){ 
+    playSound('timeup');
+    showEnd("TIME UP!"); 
+  }
 
   function applyTimePenalty(sec){
     if(!TIMER_ENABLED) return;
@@ -1217,10 +1241,18 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     const h = document.querySelectorAll('.heart');
     let idx = ${maxLives} - lives - 1;
     if(h[idx]) h[idx].classList.add('lost');
-    if(lives <= 0) showEnd("GAME OVER");
+    if(lives <= 0) {
+      playSound('lose');
+      showEnd("GAME OVER");
+    }
   }
 
-  function checkFinish() { if (document.querySelectorAll('.item').length === 0) showEnd("WELL DONE!"); }
+  function checkFinish() { 
+    if (document.querySelectorAll('.item').length === 0) {
+      playSound('win');
+      showEnd("WELL DONE!"); 
+    }
+  }
 
   function showEnd(msg) {
     if(isGameOver) return;
@@ -1236,7 +1268,6 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     if (!on) document.querySelectorAll('.bin').forEach(b => b.classList.remove('drop-active'));
   }
 
-  
   function confettiBurst(fromEl){
     if(!confettiReady || typeof confetti !== "function") return;
     const r = fromEl.getBoundingClientRect();
@@ -1250,7 +1281,8 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       origin: { x, y }
     });
   }
-function sadEmojiBurst(fromEl){
+
+  function sadEmojiBurst(fromEl){
     const r = fromEl.getBoundingClientRect(), x = r.left + r.width/2, y = r.top + 40;
     for(let i=0;i<8;i++){
       const e = document.createElement('div');
@@ -1285,6 +1317,7 @@ function sadEmojiBurst(fromEl){
     listeners: {
       start(e) {
         if(isGameOver || !gameStarted) return;
+        playSound('pick');
         const el = e.target; el.__home = el.parentNode;
         const r = el.getBoundingClientRect();
         Object.assign(el.style, { width: r.width+'px', height: r.height+'px', left: r.left+'px', top: r.top+'px' });
@@ -1299,7 +1332,10 @@ function sadEmojiBurst(fromEl){
       end(e) {
         if(isGameOver || !gameStarted) return;
         setBinsDragReady(false);
-        if(e.target.parentNode === document.body) (mode === 'return' ? returnItem(e.target) : (e.target.remove(), checkFinish()));
+        if(e.target.parentNode === document.body) {
+           playSound('drop');
+           (mode === 'return' ? returnItem(e.target) : (e.target.remove(), checkFinish()));
+        }
       }
     }
   });
@@ -1313,12 +1349,14 @@ function sadEmojiBurst(fromEl){
       const item = e.relatedTarget, bin = e.target;
       bin.classList.remove('drop-active'); setBinsDragReady(false);
       if(item.dataset.c === bin.dataset.t) {
+        playSound('correct');
         streak = STREAK_ENABLED ? (streak + 1) : 0;
         let bonus = (STREAK_ENABLED && streak >= 2) ? (streak === 2 ? 2 : (streak === 3 ? 4 : STREAK_CAP_BONUS)) : 0;
         const base = (RANDOM_SCORE_ENABLED ? (Math.floor(Math.random()*(SCORE_RANDOM_MAX-SCORE_RANDOM_MIN+1)) + SCORE_RANDOM_MIN) : CORRECT_SCORE);
         setScore(score + base + bonus);
         confettiBurst(bin); item.remove(); checkFinish();
       } else {
+        playSound('wrong');
         streak = 0; if(WRONG_SCORE_PENALTY > 0) setScore(score - WRONG_SCORE_PENALTY);
         if(WRONG_TIME_PENALTY > 0) applyTimePenalty(WRONG_TIME_PENALTY);
         lives--; updateLives(); sadEmojiBurst(bin); bin.classList.add('shake');
@@ -1336,7 +1374,6 @@ function sadEmojiBurst(fromEl){
     const wandWrap = document.getElementById('wandWrap');
     const wand = document.getElementById('wandAnim');
 
-    // lottie wand
     if (typeof lottie !== "undefined" && wand){
       lottie.loadAnimation({
         container: wand,
@@ -1379,27 +1416,21 @@ function sadEmojiBurst(fromEl){
         return;
       }
 
-      
+      playSound('ready');
 
-      // Compute where the wand should "touch" the button (near upper-left)
       const br = btn.getBoundingClientRect();
       const wr = wandWrap.getBoundingClientRect();
-
       const targetX = br.left + br.width*0.50;
       const targetY = br.top + br.height*0.58;
-
       const dx = targetX - (wr.left + wr.width*0.92);
       const dy = targetY - (wr.top + wr.height*0.58);
 
-      // Move wand to the button
       wandWrap.style.transform = 'translate(calc(-50% + ' + dx + 'px), ' + dy + 'px) rotate(-14deg)';
 
-      // Sparkles at the "touch" point
       setTimeout(() => {
         sparkleBurst(targetX, targetY);
       }, 520);
 
-      // Fade out screen, then start
       setTimeout(() => {
         if (ss) ss.classList.add('fadeOut');
         setTimeout(() => {
@@ -1416,14 +1447,12 @@ function sadEmojiBurst(fromEl){
       });
     }
 
-    // Keyboard start
     window.addEventListener('keydown', (e) => {
       if (gameStarted) return;
       if (e.key === 'Enter' || e.key === ' ') wandTapThenStart();
     });
   })();
-  // ===== /START SCREEN LOGIC =====
-
+  
   setScore(0);
 <\/script>
 </body>
@@ -1464,11 +1493,6 @@ function sadEmojiBurst(fromEl){
       if (!el || !el.id) return;
       if (el.id === 'boxCount') toggleBoxes();
       if (el.id === 'timerEnabled') syncTimerControls();
-
-
-
-
-
       if (el.id === 'randomScoreEnabled') syncScoreControls();
       if (el.id === 'scoreMin' || el.id === 'scoreMax') {
         const rndEl = document.getElementById('randomScoreEnabled');
@@ -1477,7 +1501,8 @@ function sadEmojiBurst(fromEl){
       scheduleBuild();
     };
   }
-window.onload = () => {
+
+  window.onload = () => {
     toggleBoxes();
     syncTimerControls();
     syncScoreControls();
@@ -1485,11 +1510,9 @@ window.onload = () => {
     hookLivePreview();
   };
 
-  // 🔹 UX fix: clicking an open <select> closes it (no need to click outside)
   (function initSelectToggle(){
     document.querySelectorAll('select').forEach(sel => {
       sel.addEventListener('mousedown', function(){
-        // mousedown fires before native open; use a flag to detect "second click"
         if (this.dataset._open === '1') {
           this.blur();
           this.dataset._open = '0';
@@ -1498,7 +1521,6 @@ window.onload = () => {
         }
       });
       sel.addEventListener('change', function(){
-        // after choosing an option, allow the next click to open normally
         this.dataset._open = '0';
         this.blur();
       });
@@ -1509,11 +1531,9 @@ window.onload = () => {
   })();
 
 
-    // 🐾 + ✨ Lottie decorations (editor only)
   (function initLottieDecor(){
     if (typeof lottie === "undefined") return;
 
-    // Title icons
     const rocketEl = document.getElementById('titleRocket');
     const sparkleEl = document.getElementById('titleSparkle');
     if (rocketEl) {
@@ -1535,52 +1555,29 @@ window.onload = () => {
       });
     }
 
-    // Subtle paws on the editor panel perimeter
     const overlay = document.getElementById('paw-overlay');
     if (!overlay) return;
 
     function spawnPaw(){
       if (document.hidden) return;
-
       const paw = document.createElement("div");
       paw.className = "paw";
-
       const pad = 18;
       const w = overlay.clientWidth;
       const h = overlay.clientHeight;
       if (w < 100 || h < 100) return;
-
       const side = Math.floor(Math.random() * 4);
       let x = 0, y = 0;
       let rotation = 0;
       const flip = Math.random() < 0.5 ? -1 : 1;
-
-      if(side === 0){ // top
-        x = Math.random() * w;
-        y = pad;
-        rotation = 180;
-      } else if(side === 1){ // right
-        x = w - pad;
-        y = Math.random() * h;
-        rotation = -90;
-      } else if(side === 2){ // bottom
-        x = Math.random() * w;
-        y = h - pad;
-        rotation = 0;
-      } else { // left
-        x = pad;
-        y = Math.random() * h;
-        rotation = 90;
-      }
-
+      if(side === 0){ x = Math.random() * w; y = pad; rotation = 180; } 
+      else if(side === 1){ x = w - pad; y = Math.random() * h; rotation = -90; } 
+      else if(side === 2){ x = Math.random() * w; y = h - pad; rotation = 0; } 
+      else { x = pad; y = Math.random() * h; rotation = 90; }
       paw.style.left = x + "px";
       paw.style.top = y + "px";
-
-      // rotation + mirror (looks like cat walks different directions)
       paw.style.transform = `scale(${flip}, 1) rotate(${rotation}deg)`;
-
       overlay.appendChild(paw);
-
       lottie.loadAnimation({
         container: paw,
         renderer: "svg",
@@ -1588,14 +1585,10 @@ window.onload = () => {
         autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f43e/lottie.json"
       });
-
       setTimeout(() => paw.remove(), 3600);
     }
 
-    // gentle rate
     const pawTimer = setInterval(spawnPaw, 1800);
-
-    // stop if panel removed
     const obs = new MutationObserver(() => {
       if (!document.body.contains(overlay)) {
         clearInterval(pawTimer);
