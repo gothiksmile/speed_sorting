@@ -1098,18 +1098,15 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   </div>
 
 <script>
-  // 🔹 Sound Library Initialization
+  // 🔹 Sound Library Initialization (Quiet Mode 20%)
   const BASE_URL = "https://raw.githubusercontent.com/gothiksmile/speed_sorting/main/";
-  const sounds = {
-    ready: new Audio(BASE_URL + "ready.mp3"),
-    pick: new Audio(BASE_URL + "pick.mp3"),
-    drop: new Audio(BASE_URL + "drop.mp3"),
-    wrong: new Audio(BASE_URL + "wrong.mp3"),
-    correct: new Audio(BASE_URL + "correct.mp3"),
-    timeup: new Audio(BASE_URL + "timeup.mp3"),
-    win: new Audio(BASE_URL + "win.mp3"),
-    lose: new Audio(BASE_URL + "lose.mp3")
-  };
+  const soundNames = ["ready", "pick", "drop", "wrong", "correct", "timeup", "win", "lose"];
+  const sounds = {};
+  
+  soundNames.forEach(name => {
+    sounds[name] = new Audio(BASE_URL + name + ".mp3");
+    sounds[name].volume = 0.2; // ⬅️ Настройка громкости здесь (0.0 - 1.0)
+  });
 
   function playSound(name) {
     if (sounds[name]) {
@@ -1455,149 +1452,5 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   
   setScore(0);
 <\/script>
-</body>
-</html>`;
-
-    const blob = new Blob([gameCode], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    document.getElementById('game-preview').src = url;
-
-    window.__LAST_IFRAME__ =
-      `<iframe style="width:100%; height:540px; border:0; overflow:hidden; background:transparent;" ` +
-      `srcdoc="${escForSrcdoc(gameCode)}"></iframe>`;
-
-    if (!silentBadge) flashUpdated();
-  }
-
-  async function copy() {
-    const btn = document.getElementById('copy-btn');
-    const originalText = btn.textContent;
-    const text = window.__LAST_IFRAME__ || '';
-    if (!text) return;
-    try{
-      await navigator.clipboard.writeText(text);
-      btn.classList.add('success'); btn.textContent = '✅ Copied!'; toast('Code copied!');
-      setTimeout(() => { btn.classList.remove('success'); btn.textContent = originalText; }, 1200);
-    }catch(e){ toast('Copy failed'); }
-  }
-
-  function debounce(fn, wait = 250){
-    let t; return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), wait); };
-  }
-  const scheduleBuild = debounce(() => build(), 250);
-
-  function hookLivePreview(){
-    const panel = document.getElementById('panel');
-    panel.oninput = (e) => {
-      const el = e.target;
-      if (!el || !el.id) return;
-      if (el.id === 'boxCount') toggleBoxes();
-      if (el.id === 'timerEnabled') syncTimerControls();
-      if (el.id === 'randomScoreEnabled') syncScoreControls();
-      if (el.id === 'scoreMin' || el.id === 'scoreMax') {
-        const rndEl = document.getElementById('randomScoreEnabled');
-        if (rndEl && rndEl.checked) ensureMinMax(document.getElementById('scoreMin'), document.getElementById('scoreMax'));
-      }
-      scheduleBuild();
-    };
-  }
-
-  window.onload = () => {
-    toggleBoxes();
-    syncTimerControls();
-    syncScoreControls();
-    build({ silentBadge: true });
-    hookLivePreview();
-  };
-
-  (function initSelectToggle(){
-    document.querySelectorAll('select').forEach(sel => {
-      sel.addEventListener('mousedown', function(){
-        if (this.dataset._open === '1') {
-          this.blur();
-          this.dataset._open = '0';
-        } else {
-          this.dataset._open = '1';
-        }
-      });
-      sel.addEventListener('change', function(){
-        this.dataset._open = '0';
-        this.blur();
-      });
-      sel.addEventListener('blur', function(){
-        this.dataset._open = '0';
-      });
-    });
-  })();
-
-
-  (function initLottieDecor(){
-    if (typeof lottie === "undefined") return;
-
-    const rocketEl = document.getElementById('titleRocket');
-    const sparkleEl = document.getElementById('titleSparkle');
-    if (rocketEl) {
-      lottie.loadAnimation({
-        container: rocketEl,
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6f8/lottie.json"
-      });
-    }
-    if (sparkleEl) {
-      lottie.loadAnimation({
-        container: sparkleEl,
-        renderer: "svg",
-        loop: true,
-        autoplay: true,
-        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/2728/lottie.json"
-      });
-    }
-
-    const overlay = document.getElementById('paw-overlay');
-    if (!overlay) return;
-
-    function spawnPaw(){
-      if (document.hidden) return;
-      const paw = document.createElement("div");
-      paw.className = "paw";
-      const pad = 18;
-      const w = overlay.clientWidth;
-      const h = overlay.clientHeight;
-      if (w < 100 || h < 100) return;
-      const side = Math.floor(Math.random() * 4);
-      let x = 0, y = 0;
-      let rotation = 0;
-      const flip = Math.random() < 0.5 ? -1 : 1;
-      if(side === 0){ x = Math.random() * w; y = pad; rotation = 180; } 
-      else if(side === 1){ x = w - pad; y = Math.random() * h; rotation = -90; } 
-      else if(side === 2){ x = Math.random() * w; y = h - pad; rotation = 0; } 
-      else { x = pad; y = Math.random() * h; rotation = 90; }
-      paw.style.left = x + "px";
-      paw.style.top = y + "px";
-      paw.style.transform = `scale(${flip}, 1) rotate(${rotation}deg)`;
-      overlay.appendChild(paw);
-      lottie.loadAnimation({
-        container: paw,
-        renderer: "svg",
-        loop: false,
-        autoplay: true,
-        path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f43e/lottie.json"
-      });
-      setTimeout(() => paw.remove(), 3600);
-    }
-
-    const pawTimer = setInterval(spawnPaw, 1800);
-    const obs = new MutationObserver(() => {
-      if (!document.body.contains(overlay)) {
-        clearInterval(pawTimer);
-        obs.disconnect();
-      }
-    });
-    obs.observe(document.body, { childList: true, subtree: true });
-  })();
-
-</script>
 </body>
 </html>
