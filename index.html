@@ -150,6 +150,7 @@
       box-shadow:0 1px 3px rgba(0,0,0,0.2);
     }
 
+    /* Compact sliders (match fields better) */
     .section input[type="range"]{
       height:6px;
     }
@@ -266,6 +267,7 @@
       filter: grayscale(0.15);
     }
   
+    /* 🐾 Subtle random paws ONLY on editor panel */
     #paw-overlay{
       position:absolute;
       inset:0;
@@ -293,6 +295,7 @@
       100%{ opacity:0; transform:scale(1.05); }
     }
 
+    /* Lottie icons in header title */
     .centerTitle{
       display:flex;
       align-items:center;
@@ -551,7 +554,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     </div>
 
     <div class="section">
-      <h3>🧰 Game Mode</h3>
+      <h3>🧲 Game Mode</h3>
       <label>Mode</label>
       <select id="gameMode">
         <option value="return" selected>Magnet (return)</option>
@@ -938,6 +941,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
 
+  /* ===== START SCREEN (Magic Wand + READY) ===== */
   #startScreen{
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -961,6 +965,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     width:min(520px, 92vw);
   }
 
+  /* Wand floats above, then taps the button */
   #wandWrap{
     z-index:9001;
     position:absolute;
@@ -976,6 +981,8 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
   #wandAnim{ width:100%; height:100%; }
 
+  
+
 #startBtn{
   background:none;
   border:none;
@@ -984,10 +991,12 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   position:relative;
   z-index:9000;
 }
+
   
   #startBtn:active{ transform:scale(1.03); }
   #startBtn[disabled]{ opacity:0.75; cursor:default; }
 
+  /* Sparkles burst */
   .sparkle{
     position:fixed;
     left:0; top:0;
@@ -1011,6 +1020,8 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     display:block;
     pointer-events:none;
   }
+
+  /* ===== /START SCREEN ===== */
 
   #end{
     position:fixed; top:0; left:0;
@@ -1087,23 +1098,25 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   </div>
 
 <script>
-  // 🔹 Sound assets
+  // 🔹 Sound Library Initialization
+  const BASE_URL = "https://raw.githubusercontent.com/gothiksmile/speed_sorting/main/";
   const sounds = {
-    ready: new Audio('ready.mp3'),
-    pick: new Audio('pick.mp3'),
-    drop: new Audio('drop.mp3'),
-    wrong: new Audio('wrong.mp3'),
-    win: new Audio('win.mp3'),
-    lose: new Audio('lose.mp3'),
-    timeup: new Audio('timeup.mp3')
+    ready: new Audio(BASE_URL + "ready.mp3"),
+    pick: new Audio(BASE_URL + "pick.mp3"),
+    drop: new Audio(BASE_URL + "drop.mp3"),
+    wrong: new Audio(BASE_URL + "wrong.mp3"),
+    correct: new Audio(BASE_URL + "correct.mp3"),
+    timeup: new Audio(BASE_URL + "timeup.mp3"),
+    win: new Audio(BASE_URL + "win.mp3"),
+    lose: new Audio(BASE_URL + "lose.mp3")
   };
 
-  const playSnd = (s) => {
-    if(sounds[s]) {
-      sounds[s].currentTime = 0;
-      sounds[s].play().catch(() => {});
+  function playSound(name) {
+    if (sounds[name]) {
+      sounds[name].currentTime = 0;
+      sounds[name].play().catch(() => {});
     }
-  };
+  }
 
   const mode = "${mode}";
   const dir = "${dir}";
@@ -1119,12 +1132,13 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   const WRONG_SCORE_PENALTY = ${WRONG_SCORE_PENALTY};
   const STREAK_ENABLED = ${STREAK_ENABLED};
   const STREAK_CAP_BONUS = ${STREAK_CAP};
-  
+
   let confettiReady = false;
   (function loadConfetti(){
     const s = document.createElement("script");
     s.src = "https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js";
     s.onload = () => { confettiReady = true; };
+    s.onerror = () => { confettiReady = false; };
     document.head.appendChild(s);
   })();
 
@@ -1157,8 +1171,9 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
   function stopTimer(){ if(timerTick) clearInterval(timerTick); timerTick = null; }
+  
   function endByTime(){ 
-    playSnd('timeup');
+    playSound('timeup');
     showEnd("TIME UP!"); 
   }
 
@@ -1226,19 +1241,22 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     const h = document.querySelectorAll('.heart');
     let idx = ${maxLives} - lives - 1;
     if(h[idx]) h[idx].classList.add('lost');
-    if(lives <= 0) showEnd("GAME OVER");
+    if(lives <= 0) {
+      playSound('lose');
+      showEnd("GAME OVER");
+    }
   }
 
-  function checkFinish() { if (document.querySelectorAll('.item').length === 0) showEnd("WELL DONE!"); }
+  function checkFinish() { 
+    if (document.querySelectorAll('.item').length === 0) {
+      playSound('win');
+      showEnd("WELL DONE!"); 
+    }
+  }
 
   function showEnd(msg) {
     if(isGameOver) return;
     isGameOver = true; running = false; stopTimer();
-
-    // Final sound logic
-    if(msg === "WELL DONE!") playSnd('win');
-    else playSnd('lose');
-
     const endScreen = document.getElementById('end');
     endScreen.style.display = 'flex';
     document.getElementById('m').innerText = msg;
@@ -1255,7 +1273,13 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     const r = fromEl.getBoundingClientRect();
     const x = (r.left + r.width/2) / window.innerWidth;
     const y = (r.top + r.height*0.35) / window.innerHeight;
-    confetti({ particleCount: 70, spread: 80, startVelocity: 38, origin: { x, y } });
+
+    confetti({
+      particleCount: 70,
+      spread: 80,
+      startVelocity: 38,
+      origin: { x, y }
+    });
   }
 
   function sadEmojiBurst(fromEl){
@@ -1273,7 +1297,6 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   }
 
   function returnItem(el) {
-    playSnd('drop');
     const home = el.__home;
     if (!home || !home.isConnected) { el.remove(); checkFinish(); return; }
     el.classList.remove('dragging'); el.classList.add('returning');
@@ -1294,7 +1317,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     listeners: {
       start(e) {
         if(isGameOver || !gameStarted) return;
-        playSnd('pick');
+        playSound('pick');
         const el = e.target; el.__home = el.parentNode;
         const r = el.getBoundingClientRect();
         Object.assign(el.style, { width: r.width+'px', height: r.height+'px', left: r.left+'px', top: r.top+'px' });
@@ -1309,7 +1332,10 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       end(e) {
         if(isGameOver || !gameStarted) return;
         setBinsDragReady(false);
-        if(e.target.parentNode === document.body) (mode === 'return' ? returnItem(e.target) : (e.target.remove(), checkFinish()));
+        if(e.target.parentNode === document.body) {
+           playSound('drop');
+           (mode === 'return' ? returnItem(e.target) : (e.target.remove(), checkFinish()));
+        }
       }
     }
   });
@@ -1323,14 +1349,14 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       const item = e.relatedTarget, bin = e.target;
       bin.classList.remove('drop-active'); setBinsDragReady(false);
       if(item.dataset.c === bin.dataset.t) {
-        playSnd('win');
+        playSound('correct');
         streak = STREAK_ENABLED ? (streak + 1) : 0;
         let bonus = (STREAK_ENABLED && streak >= 2) ? (streak === 2 ? 2 : (streak === 3 ? 4 : STREAK_CAP_BONUS)) : 0;
         const base = (RANDOM_SCORE_ENABLED ? (Math.floor(Math.random()*(SCORE_RANDOM_MAX-SCORE_RANDOM_MIN+1)) + SCORE_RANDOM_MIN) : CORRECT_SCORE);
         setScore(score + base + bonus);
         confettiBurst(bin); item.remove(); checkFinish();
       } else {
-        playSnd('wrong');
+        playSound('wrong');
         streak = 0; if(WRONG_SCORE_PENALTY > 0) setScore(score - WRONG_SCORE_PENALTY);
         if(WRONG_TIME_PENALTY > 0) applyTimePenalty(WRONG_TIME_PENALTY);
         lives--; updateLives(); sadEmojiBurst(bin); bin.classList.add('shake');
@@ -1341,6 +1367,7 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   });
 
 
+  // ===== START SCREEN LOGIC =====
   (function initStartScreen(){
     const ss = document.getElementById('startScreen');
     const btn = document.getElementById('startBtn');
@@ -1375,15 +1402,21 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
 
     function startGame(){
       if (gameStarted || isGameOver) return;
-      gameStarted = true; running = true;
+      gameStarted = true;
+      running = true;
       startTimer();
       requestAnimationFrame(beltTick);
     }
 
     function wandTapThenStart(){
       if (gameStarted || isGameOver) return;
-      playSnd('ready');
-      if (!btn || !wandWrap) { if (ss) ss.style.display='none'; startGame(); return; }
+      if (!btn || !wandWrap) { 
+        if (ss) ss.style.display='none';
+        startGame();
+        return;
+      }
+
+      playSound('ready');
 
       const br = btn.getBoundingClientRect();
       const wr = wandWrap.getBoundingClientRect();
@@ -1394,7 +1427,10 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
 
       wandWrap.style.transform = 'translate(calc(-50% + ' + dx + 'px), ' + dy + 'px) rotate(-14deg)';
 
-      setTimeout(() => sparkleBurst(targetX, targetY), 520);
+      setTimeout(() => {
+        sparkleBurst(targetX, targetY);
+      }, 520);
+
       setTimeout(() => {
         if (ss) ss.classList.add('fadeOut');
         setTimeout(() => {
@@ -1404,12 +1440,19 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       }, 680);
     }
 
-    if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); wandTapThenStart(); });
+    if (btn){
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        wandTapThenStart();
+      });
+    }
+
     window.addEventListener('keydown', (e) => {
-      if (!gameStarted && (e.key === 'Enter' || e.key === ' ')) wandTapThenStart();
+      if (gameStarted) return;
+      if (e.key === 'Enter' || e.key === ' ') wandTapThenStart();
     });
   })();
-
+  
   setScore(0);
 <\/script>
 </body>
@@ -1470,11 +1513,20 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
   (function initSelectToggle(){
     document.querySelectorAll('select').forEach(sel => {
       sel.addEventListener('mousedown', function(){
-        if (this.dataset._open === '1') { this.blur(); this.dataset._open = '0'; }
-        else { this.dataset._open = '1'; }
+        if (this.dataset._open === '1') {
+          this.blur();
+          this.dataset._open = '0';
+        } else {
+          this.dataset._open = '1';
+        }
       });
-      sel.addEventListener('change', function(){ this.dataset._open = '0'; this.blur(); });
-      sel.addEventListener('blur', function(){ this.dataset._open = '0'; });
+      sel.addEventListener('change', function(){
+        this.dataset._open = '0';
+        this.blur();
+      });
+      sel.addEventListener('blur', function(){
+        this.dataset._open = '0';
+      });
     });
   })();
 
@@ -1486,13 +1538,19 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
     const sparkleEl = document.getElementById('titleSparkle');
     if (rocketEl) {
       lottie.loadAnimation({
-        container: rocketEl, renderer: "svg", loop: true, autoplay: true,
+        container: rocketEl,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f6f8/lottie.json"
       });
     }
     if (sparkleEl) {
       lottie.loadAnimation({
-        container: sparkleEl, renderer: "svg", loop: true, autoplay: true,
+        container: sparkleEl,
+        renderer: "svg",
+        loop: true,
+        autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/2728/lottie.json"
       });
     }
@@ -1505,29 +1563,39 @@ Fish | 2 | https://cdn-icons-png.flaticon.com/512/3058/3058995.png</textarea>
       const paw = document.createElement("div");
       paw.className = "paw";
       const pad = 18;
-      const w = overlay.clientWidth, h = overlay.clientHeight;
+      const w = overlay.clientWidth;
+      const h = overlay.clientHeight;
       if (w < 100 || h < 100) return;
-
       const side = Math.floor(Math.random() * 4);
-      let x = 0, y = 0, rotation = 0;
+      let x = 0, y = 0;
+      let rotation = 0;
       const flip = Math.random() < 0.5 ? -1 : 1;
-
-      if(side === 0){ x = Math.random() * w; y = pad; rotation = 180; }
-      else if(side === 1){ x = w - pad; y = Math.random() * h; rotation = -90; }
-      else if(side === 2){ x = Math.random() * w; y = h - pad; rotation = 0; }
+      if(side === 0){ x = Math.random() * w; y = pad; rotation = 180; } 
+      else if(side === 1){ x = w - pad; y = Math.random() * h; rotation = -90; } 
+      else if(side === 2){ x = Math.random() * w; y = h - pad; rotation = 0; } 
       else { x = pad; y = Math.random() * h; rotation = 90; }
-
-      paw.style.left = x + "px"; paw.style.top = y + "px";
+      paw.style.left = x + "px";
+      paw.style.top = y + "px";
       paw.style.transform = `scale(${flip}, 1) rotate(${rotation}deg)`;
       overlay.appendChild(paw);
-
       lottie.loadAnimation({
-        container: paw, renderer: "svg", loop: false, autoplay: true,
+        container: paw,
+        renderer: "svg",
+        loop: false,
+        autoplay: true,
         path: "https://fonts.gstatic.com/s/e/notoemoji/latest/1f43e/lottie.json"
       });
       setTimeout(() => paw.remove(), 3600);
     }
-    setInterval(spawnPaw, 1800);
+
+    const pawTimer = setInterval(spawnPaw, 1800);
+    const obs = new MutationObserver(() => {
+      if (!document.body.contains(overlay)) {
+        clearInterval(pawTimer);
+        obs.disconnect();
+      }
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
   })();
 
 </script>
